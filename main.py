@@ -319,7 +319,7 @@ while running:
         if winner == PLAYER_X:
             message = "Người chơi X thắng!"
         elif winner == PLAYER_O:
-             message = "Người chơi O (Máy) thắng!"
+             message = "Người chơi O thắng!"
         elif winner == 'Draw':
             message = "Hòa!"
         else:
