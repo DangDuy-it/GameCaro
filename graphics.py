@@ -304,7 +304,7 @@ def draw_in_game_menu(mouse_pos):
      main_menu_rect_pos = pygame.Rect(button_x, button_y_start + 2 * (INGAME_MENU_BUTTON_HEIGHT + gap), INGAME_MENU_BUTTON_WIDTH, INGAME_MENU_BUTTON_HEIGHT)
      close_rect_pos = pygame.Rect(menu_rect.right - 30, menu_rect.top + 10, 20, 20)
 
-     undo_rect = draw_button("Quay lại (Undo)", undo_rect_pos, mouse_pos, get_ingame_button_font())
+     undo_rect = draw_button("Quay lại", undo_rect_pos, mouse_pos, get_ingame_button_font())
      restart_rect = draw_button("Chơi lại", restart_rect_pos, mouse_pos, get_ingame_button_font())
      main_menu_rect = draw_button("Về Menu Chính", main_menu_rect_pos, mouse_pos, get_ingame_button_font())
 

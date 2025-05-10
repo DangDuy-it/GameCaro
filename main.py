@@ -17,15 +17,14 @@ from constants import (
 )
 
 # Import các module khác
-from board import create_board, is_valid_location, place_piece, check_draw, undo_move # Import undo_move
+from board import create_board, is_valid_location, place_piece, check_draw, undo_move
 from win_checker import check_win
 from graphics import (get_screen, get_font, get_small_font, get_button_font,
                       draw_board, draw_message, get_row_col_from_mouse,
                       draw_turn_message, quit_pygame,
                       draw_main_menu, draw_difficulty_menu,
-                      draw_open_menu_button, draw_in_game_menu) # Import các hàm vẽ menu mới
-from ai import get_ai_move # Import hàm gọi AI chính
-
+                      draw_open_menu_button, draw_in_game_menu)
+from ai import get_ai_move
 
 # --- Biến trạng thái game ---
 game_state = MENU_MAIN
@@ -37,7 +36,7 @@ game_mode = None # 'PvP' hoặc 'PvAI'
 ai_level = None # Lưu mức độ khó đã chọn (DIFFICULTY_EASY, MEDIUM, HARD)
 ai_search_depth = None # Lưu độ sâu chỉ khi dùng Minimax (Medium/Hard)
 
-# --- Biến trạng thái trong lúc chơi (Thêm mới) ---
+# --- Biến trạng thái trong lúc chơi ---
 is_menu_open = False # Cờ để biết menu trong game có đang mở không
 move_history = [] # Lưu lịch sử các nước đi [(row1, col1), (row2, col2), ...]
 
@@ -48,9 +47,16 @@ is_ai_thinking = False # Biến trạng thái để hiển thị "Máy đang ngh
 # Lưu trạng thái chuột để vẽ hover cho nút
 mouse_pos = (0, 0)
 
+# Biến để kiểm soát thời gian cho AI
+ai_move_time = 0
+ai_thinking_delay = 500  # Thời gian chờ tối thiểu (milli giây) để AI tạo hiệu ứng "đang suy nghĩ"
+
 while running:
     # Lấy vị trí chuột hiện tại mỗi frame để cập nhật hover cho nút
     mouse_pos = pygame.mouse.get_pos()
+    
+    # Lấy thời gian hiện tại cho việc xử lý AI
+    current_time = pygame.time.get_ticks()
 
     # --- Xử lý sự kiện ---
     for event in pygame.event.get():
@@ -62,8 +68,7 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             # Xử lý click tùy theo trạng thái game
             if game_state == MENU_MAIN:
-                # Lấy rects của nút để kiểm tra click (không cần redraw ở đây)
-                # Cần tính lại vị trí nút giống trong draw_main_menu
+                # Lấy rects của nút để kiểm tra click
                 button_y_start = SCREEN_HEIGHT // 2 - BUTTON_HEIGHT - 20
                 button_x = SCREEN_WIDTH // 2 - BUTTON_WIDTH // 2
                 gap = 20
@@ -88,8 +93,7 @@ while running:
                     print("Chuyển sang menu chọn độ khó AI.")
 
             elif game_state == MENU_DIFFICULTY:
-                 # Lấy rects của nút chọn độ khó (không cần redraw)
-                 # Cần tính lại vị trí nút giống trong draw_difficulty_menu
+                 # Lấy rects của nút chọn độ khó
                  button_y_start = SCREEN_HEIGHT // 2 - BUTTON_HEIGHT * 1.5 - 2 * 20
                  button_x = SCREEN_WIDTH // 2 - BUTTON_WIDTH // 2
                  gap = 20
@@ -197,7 +201,7 @@ while running:
                      elif menu_rects['main_menu'].collidepoint(event.pos):
                          print("Click Về Menu Chính.")
                          # Reset game và về menu chính
-                         board = None # Đặt board về None hoặc create_board() tùy ý, main menu không cần board
+                         board = None
                          current_player = None
                          game_over = False
                          winner = None
@@ -216,7 +220,7 @@ while running:
 
                  else:
                      # --- Xử lý click khi menu trong game đang đóng ---
-                     open_button_rect = draw_open_menu_button(mouse_pos) # Vẽ và lấy rect (không hiển thị ngay)
+                     open_button_rect = draw_open_menu_button(mouse_pos) # Vẽ và lấy rect
                      if open_button_rect.collidepoint(event.pos):
                          is_menu_open = True # Mở menu
                          print("Mở menu trong game.")
@@ -252,7 +256,8 @@ while running:
                                           game_state = GAME_OVER
                                       else:
                                           current_player = AI_PLAYER
-                                          is_ai_thinking = True # Bắt đầu trạng thái AI nghĩ
+                                          is_ai_thinking = True
+                                          ai_move_time = current_time  # Lưu thời điểm bắt đầu AI suy nghĩ
 
 
     # --- Cập nhật và Vẽ màn hình dựa trên trạng thái game ---
@@ -273,44 +278,51 @@ while running:
             draw_in_game_menu(mouse_pos) # Vẽ menu overlay
 
         # Xử lý lượt đi của AI (chỉ trong chế độ PvAI và khi đến lượt AI)
-        # Kiểm tra is_ai_thinking để đảm bảo chỉ gọi get_ai_move một lần mỗi lượt AI
-        # AI không đánh khi menu đang mở
-        if game_mode == 'PvAI' and current_player == AI_PLAYER and not game_over and is_ai_thinking and not is_menu_open:
-            # AI đang nghĩ, hiển thị thông báo (đã làm trong draw_turn_message)
-            # Bây giờ thực hiện tính toán của AI
-            ai_row, ai_col = get_ai_move(board, ai_level, ai_search_depth)
+        if (game_mode == 'PvAI' and current_player == AI_PLAYER and 
+            not game_over and is_ai_thinking and not is_menu_open):
+            
+            # Tạo hiệu ứng "AI đang suy nghĩ" bằng cách đợi một khoảng thời gian
+            if current_time - ai_move_time >= ai_thinking_delay:
+                # Chỉ thực hiện nước đi của AI sau khi đã đợi đủ thời gian
+                try:
+                    ai_row, ai_col = get_ai_move(board, ai_level, ai_search_depth)
+                    
+                    if ai_row is not None and ai_col is not None:
+                        # Kiểm tra nước đi có hợp lệ không
+                        if is_valid_location(board, ai_row, ai_col):
+                            place_piece(board, ai_row, ai_col, AI_PLAYER)
+                            move_history.append((ai_row, ai_col)) # Lưu nước đi của AI
+                            
+                            if check_win(board, AI_PLAYER):
+                                winner = AI_PLAYER
+                                game_over = True
+                                game_state = GAME_OVER
+                            elif check_draw(board):
+                                winner = 'Draw'
+                                game_over = True
+                                game_state = GAME_OVER
+                            else:
+                                current_player = HUMAN_PLAYER # Đổi lượt lại cho người
+                        else:
+                            # Xử lý trường hợp AI trả về nước không hợp lệ
+                            print(f"Lỗi AI: Trả về nước không hợp lệ ({ai_row}, {ai_col})")
+                            current_player = HUMAN_PLAYER  # Tạm thời chuyển lượt cho người chơi
+                    else:
+                        # Trường hợp AI không tìm được nước đi
+                        print("AI không tìm được nước đi hợp lệ.")
+                        # Kiểm tra nếu bàn cờ đầy, đánh dấu là hòa
+                        if check_draw(board):
+                            winner = 'Draw'
+                            game_over = True
+                            game_state = GAME_OVER
+                        else:
+                            current_player = HUMAN_PLAYER  # Chuyển lượt về người chơi
+                
+                except Exception as e:
+                    print(f"Lỗi khi xử lý nước đi của AI: {e}")
+                    current_player = HUMAN_PLAYER  # Chuyển lượt về người chơi
 
-            if ai_row is not None and ai_col is not None:
-                 # Kiểm tra lại lần nữa nước đi có hợp lệ trên bàn cờ hiện tại không
-                 if is_valid_location(board, ai_row, ai_col):
-                     place_piece(board, ai_row, ai_col, AI_PLAYER)
-                     move_history.append((ai_row, ai_col)) # Lưu nước đi của AI
-
-                     if check_win(board, AI_PLAYER):
-                         winner = AI_PLAYER
-                         game_over = True
-                         game_state = GAME_OVER
-                     elif check_draw(board):
-                         winner = 'Draw'
-                         game_over = True
-                         game_state = GAME_OVER
-                     else:
-                         current_player = HUMAN_PLAYER # Đổi lượt lại cho người
-                 else:
-                     # Trường hợp AI trả về nước không hợp lệ
-                     print(f"Lỗi AI: Trả về nước không hợp lệ ({ai_row}, {ai_col})")
-                     game_over = True
-                     winner = 'Lỗi AI'
-                     game_state = GAME_OVER
-
-                 is_ai_thinking = False # Kết thúc trạng thái AI nghĩ
-            else:
-                 # Trường hợp AI không tìm được nước đi hợp lệ (ví dụ bàn cờ đầy)
-                 print("AI không tìm được nước đi hợp lệ.")
-                 game_over = True
-                 winner = 'Lỗi AI?' # Hoặc 'Hòa' tùy tình huống
-                 game_state = GAME_OVER
-                 is_ai_thinking = False # Kết thúc trạng thái AI nghĩ
+                is_ai_thinking = False  # Kết thúc trạng thái AI nghĩ
 
 
     elif game_state == GAME_OVER:
@@ -323,7 +335,7 @@ while running:
         elif winner == 'Draw':
             message = "Hòa!"
         else:
-             message = "Kết thúc game." # Trường hợp khác (ví dụ Lỗi AI)
+             message = "Kết thúc game." # Trường hợp khác
 
         draw_message(message, color=RED)
         draw_message("Click để về Menu", color=BLACK, center_y = SCREEN_HEIGHT - GUI_MARGIN // 2)
@@ -351,12 +363,11 @@ while running:
                      move_history = []
                      is_ai_thinking = False
 
-             # Cần cập nhật màn hình trong vòng lặp chờ này
+             # Cập nhật màn hình trong vòng lặp chờ này
              pygame.display.flip()
 
 
     # Cập nhật toàn bộ màn hình (trừ khi đang trong vòng lặp chờ của GAME_OVER)
-    # pygame.display.flip() được gọi riêng trong vòng lặp chờ GAME_OVER
     if game_state != GAME_OVER:
        pygame.display.flip()
 

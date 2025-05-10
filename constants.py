@@ -9,6 +9,7 @@ SCREEN_HEIGHT = BOARD_SIZE * CELL_SIZE + 2 * GUI_MARGIN
 LINE_THICKNESS = 1
 PIECE_SIZE = CELL_SIZE // 2 - 2 # Kích thước quân cờ
 
+CONNECT_N=5
 # --- Màu sắc ---
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0) # <-- Đảm bảo dòng này tồn tại và đúng
