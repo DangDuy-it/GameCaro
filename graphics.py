@@ -32,17 +32,12 @@ def get_ingame_button_font(): return _ingame_button_font
 
 # --- Tải và lưu trữ hình ảnh (Thêm mới/Cập nhật) ---
 # Biến toàn cục để lưu trữ ảnh
-background_fullscreen_img = None # <-- Biến mới cho ảnh nền toàn màn hình
+background_fullscreen_img = None 
 board_background_img = None
 x_piece_img = None
 o_piece_img = None
-# ... (các biến ảnh win/lose/start nếu có)
 
 try:
-    # --- Tải ảnh nền toàn màn hình (Thêm mới) ---
-    # Hãy thay đổi 'images/background.png' nếu tên file ảnh nền toàn màn hình của bạn khác
-    # Nếu bạn không có ảnh nền toàn màn hình riêng, có thể dùng lại board.png và scale lớn,
-    # nhưng lưu ý có thể bị biến dạng nếu tỷ lệ ảnh không khớp màn hình.
     try:
          background_fullscreen_img = pygame.image.load('images/background.png').convert_alpha()
          background_fullscreen_img = pygame.transform.scale(background_fullscreen_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -65,7 +60,6 @@ try:
     x_piece_img = pygame.transform.scale(x_piece_img, (piece_display_size, piece_display_size))
     o_piece_img = pygame.transform.scale(o_piece_img, (piece_display_size, piece_display_size))
 
-    # ... (Tải thêm ảnh khác nếu có, ví dụ win.png, lose.png)
 
 except pygame.error as e:
     print(f"Không thể tải một số hình ảnh quan trọng (board.png, X.png, O.png): {e}")
@@ -304,7 +298,7 @@ def draw_in_game_menu(mouse_pos):
      main_menu_rect_pos = pygame.Rect(button_x, button_y_start + 2 * (INGAME_MENU_BUTTON_HEIGHT + gap), INGAME_MENU_BUTTON_WIDTH, INGAME_MENU_BUTTON_HEIGHT)
      close_rect_pos = pygame.Rect(menu_rect.right - 30, menu_rect.top + 10, 20, 20)
 
-     undo_rect = draw_button("Quay lại", undo_rect_pos, mouse_pos, get_ingame_button_font())
+     undo_rect = draw_button("Hoàn tác", undo_rect_pos, mouse_pos, get_ingame_button_font())
      restart_rect = draw_button("Chơi lại", restart_rect_pos, mouse_pos, get_ingame_button_font())
      main_menu_rect = draw_button("Về Menu Chính", main_menu_rect_pos, mouse_pos, get_ingame_button_font())
 

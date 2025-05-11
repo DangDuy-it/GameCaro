@@ -145,7 +145,7 @@ while running:
                      is_menu_open = False
                      move_history = []
                      is_ai_thinking = False
-                     print(f"Bắt đầu game với máy (Khó - Minimax Depth={ai_search_depth}).")
+                     print(f"Bắt đầu game với máy (Khó - Minimax Depth=3).")
                  elif button_rects['back'].collidepoint(event.pos):
                       game_state = MENU_MAIN
                       print("Quay lại menu chính.")
@@ -375,3 +375,5 @@ while running:
 # Thoát Pygame khi running = False và game_state = QUIT
 if game_state == QUIT:
     quit_pygame()
+
+

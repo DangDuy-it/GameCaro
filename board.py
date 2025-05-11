@@ -13,7 +13,6 @@ def is_valid_location(board, row, col):
 
 def place_piece(board, row, col, player):
     """Đặt quân cờ của người chơi vào ô (row, col)."""
-    # Hàm này dùng nội bộ AI để thử nước đi hoặc khi chắc chắn ô trống
     if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
         board[row][col] = player
         return True
@@ -32,3 +31,4 @@ def undo_move(board, row, col):
     """Hoàn tác một nước đi tại ô (row, col)."""
     if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
         board[row][col] = EMPTY
+
